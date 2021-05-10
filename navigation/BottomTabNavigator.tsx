@@ -11,8 +11,8 @@ import React from "react";
 import Colors from "../constants/Colors";
 import useColorScheme from "../hooks/useColorScheme";
 import Home from "../screens/Home";
-import Logout from "../screens/Logout";
-import { BottomTabParamList, HomeParamList, LogOutParamList } from "../types";
+import User from "../screens/User";
+import { BottomTabParamList, HomeParamList, UserParamList } from "../types";
 
 const BottomTab = createBottomTabNavigator<BottomTabParamList>();
 
@@ -34,11 +34,11 @@ export default function BottomTabNavigator() {
         }}
       />
       <BottomTab.Screen
-        name="Logout"
-        component={LogoutNavigator}
+        name="User"
+        component={User}
         options={{
           tabBarIcon: ({ color }) => (
-            <TabBarIcon size={24} name="log-out-outline" color={color} />
+            <TabBarIcon size={30} name="person-outline" color={color} />
           ),
         }}
       />
@@ -72,15 +72,15 @@ function HomeNavigator() {
   );
 }
 
-const LogoutStack = createStackNavigator<LogOutParamList>();
+const LogoutStack = createStackNavigator<UserParamList>();
 
-function LogoutNavigator() {
+function UserNavigator() {
   return (
     <LogoutStack.Navigator>
       <LogoutStack.Screen
-        name="LogoutScreen"
-        component={Logout}
-        options={{ headerTitle: "Logout" }}
+        name="UserScreen"
+        component={User}
+        options={{ headerTitle: "User" }}
       />
     </LogoutStack.Navigator>
   );

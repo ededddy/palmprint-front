@@ -9,6 +9,7 @@ import {
   KeyboardAvoidingView,
   Button,
 } from "react-native";
+import * as SecureStore from "expo-secure-store";
 
 import { Text, View } from "../../components/Themed";
 

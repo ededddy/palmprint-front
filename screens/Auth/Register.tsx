@@ -22,6 +22,8 @@ interface Props {
 
 export default function Register({ navigation }: Props) {
   const { userName, setUserName } = useContext(LoginContext);
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
 
   return (
     <View style={styles.container}>
@@ -46,10 +48,35 @@ export default function Register({ navigation }: Props) {
               android: PlatformColor("@android:color/white"),
             })}
           />
+          <TextInput
+            style={styles.input}
+            value={firstName}
+            onChangeText={setFirstName}
+            placeholder="First name"
+            placeholderTextColor={Platform.select({
+              ios: PlatformColor("secondaryLabel"),
+              android: PlatformColor("@android:color/white"),
+            })}
+          />
+          <TextInput
+            style={styles.input}
+            value={lastName}
+            onChangeText={setLastName}
+            placeholder="Last name"
+            placeholderTextColor={Platform.select({
+              ios: PlatformColor("secondaryLabel"),
+              android: PlatformColor("@android:color/white"),
+            })}
+          />
           <Button
             title="NEXT"
             accessibilityLabel="Click to continue your process"
-            onPress={() => navigation.navigate("CapturePalm", { isLog: false })}
+            onPress={() =>
+              navigation.navigate("CapturePalm", {
+                isLog: false,
+                data: { firstName, lastName },
+              })
+            }
           />
         </View>
         <View style={styles.bottom}>

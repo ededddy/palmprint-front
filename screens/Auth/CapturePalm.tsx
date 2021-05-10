@@ -9,8 +9,9 @@ import {
   TouchableOpacity,
   Image,
   SafeAreaView,
-  ImageBackground,
 } from "react-native";
+
+import * as SecureStore from "expo-secure-store";
 
 import { Text, View } from "../../components/Themed";
 
@@ -20,6 +21,10 @@ import { RootStackParamList } from "../../types";
 
 export type PalmParams = {
   isLog: boolean;
+  data?: {
+    firstName: string;
+    lastName: string;
+  };
 };
 
 interface Props {
@@ -28,13 +33,84 @@ interface Props {
 }
 
 export default function CapturePalm({ navigation, route }: Props) {
-  const { setLoggedIn } = useContext(LoginContext);
-  const { isLog } = route.params;
+  const { authToken, setAuthToken, userName, setLoggedIn } = useContext(
+    LoginContext
+  );
+  const { isLog, data } = route.params;
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [type, setType] = useState(Camera.Constants.Type.back);
   const [preview, setPreview] = useState<boolean>(false);
   let camera: Camera;
   const [photo, setPhoto] = useState<any>();
+  const onLogin = async () => {
+    if (photo && !authToken) {
+      const response = await fetch(
+        "https://cisc4003.icac.tech/api/Auth/login",
+        {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            username: userName,
+            palmprint: "123456",
+          }),
+        }
+      );
+      if (!response.ok) {
+        alert("Invalid palm print or username");
+        return;
+      }
+      const ret = await response.json();
+      console.log(ret.data!.Token);
+      await SecureStore.setItemAsync("token", ret.data!.Token);
+      await SecureStore.setItemAsync("loginDate", Date.now().toString());
+      await SecureStore.setItemAsync("loggedIn", "YES");
+      setAuthToken(ret.data!.Token);
+      setLoggedIn(true);
+    }
+  };
+
+  const onRegister = async () => {
+    if (photo && !authToken) {
+      const response = await fetch(
+        "https://cisc4003.icac.tech/api/Auth/register",
+        {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            username: userName,
+            palmprint: "123456",
+            firstname: data?.firstName,
+            lastname: data?.lastName,
+          }),
+        }
+      );
+      const ret = await response.json();
+      console.log(
+        JSON.stringify({
+          username: userName,
+          palmprint: "123456",
+          ...data,
+        })
+      );
+      if (!response.ok) {
+        alert("Invalid palm print or username");
+        console.log(ret!.data.message);
+        return;
+      }
+      console.log(ret.data!.Token);
+      await SecureStore.setItemAsync("token", ret.data!.Token);
+      await SecureStore.setItemAsync("loginDate", Date.now().toString());
+      await SecureStore.setItemAsync("loggedIn", "YES");
+      setAuthToken(ret.data!.Token);
+      setLoggedIn(true);
+    }
+  };
 
   useEffect(() => {
     (async () => {
@@ -106,7 +182,10 @@ export default function CapturePalm({ navigation, route }: Props) {
           <Image source={{ uri: photo!.uri }} style={{ flex: 1 }} />
           <TouchableOpacity
             style={styles.blueButton}
-            onPress={() => setLoggedIn(true)}
+            onPress={() => {
+              if (isLog) onLogin();
+              else onRegister();
+            }}
           >
             <Text style={styles.text}>NEXT</Text>
           </TouchableOpacity>

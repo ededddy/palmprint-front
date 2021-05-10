@@ -16,13 +16,22 @@ export type RootStackParamList = {
 
 export type BottomTabParamList = {
   Home: undefined;
-  Logout: undefined;
+  User: undefined;
 };
 
-export type LogOutParamList = {
-  LogoutScreen: undefined;
+export type UserParamList = {
+  UserScreen: undefined;
 };
 
 export type HomeParamList = {
   HomeScreen: undefined;
+};
+
+export type UserType = {
+  Firstname: string;
+  Lastname: string;
+  Fullname: string;
+  RoleID: number;
+  RoleName: string;
+  Icon: string;
 };

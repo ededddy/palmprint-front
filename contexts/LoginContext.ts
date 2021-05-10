@@ -5,6 +5,8 @@ interface LoginContextInterface {
   setLoggedIn: any;
   userName: string;
   setUserName: any;
+  authToken: string;
+  setAuthToken: any;
 }
 
 export const LoginContext = createContext<LoginContextInterface>(
