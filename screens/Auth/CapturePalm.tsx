@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   Image,
   SafeAreaView,
+  ActivityIndicator,
 } from "react-native";
 
 import * as SecureStore from "expo-secure-store";
@@ -36,6 +37,7 @@ export default function CapturePalm({ navigation, route }: Props) {
   const { authToken, setAuthToken, userName, setLoggedIn } = useContext(
     LoginContext
   );
+  const [isLoading, setIsLoading] = useState(false);
   const { isLog, data } = route.params;
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [type, setType] = useState(Camera.Constants.Type.back);
@@ -54,10 +56,11 @@ export default function CapturePalm({ navigation, route }: Props) {
           },
           body: JSON.stringify({
             username: userName,
-            palmprint: "123456",
+            palmprint: photo.base64,
           }),
         }
       );
+      setIsLoading(false);
       if (!response.ok) {
         alert("Invalid palm print or username");
         return;
@@ -67,6 +70,7 @@ export default function CapturePalm({ navigation, route }: Props) {
       await SecureStore.setItemAsync("token", ret.data!.Token);
       await SecureStore.setItemAsync("loginDate", Date.now().toString());
       await SecureStore.setItemAsync("loggedIn", "YES");
+      setIsLoading(false);
       setAuthToken(ret.data!.Token);
       setLoggedIn(true);
     }
@@ -74,6 +78,7 @@ export default function CapturePalm({ navigation, route }: Props) {
 
   const onRegister = async () => {
     if (photo && !authToken) {
+      setIsLoading(true);
       const response = await fetch(
         "https://cisc4003.icac.tech/api/Auth/register",
         {
@@ -81,23 +86,17 @@ export default function CapturePalm({ navigation, route }: Props) {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
+
+            body: JSON.stringify({
+              username: userName,
+              palmprint: photo.base64,
+              firstname: data?.firstName,
+              lastname: data?.lastName,
+            }),
           },
-          body: JSON.stringify({
-            username: userName,
-            palmprint: "123456",
-            firstname: data?.firstName,
-            lastname: data?.lastName,
-          }),
         }
       );
       const ret = await response.json();
-      console.log(
-        JSON.stringify({
-          username: userName,
-          palmprint: "123456",
-          ...data,
-        })
-      );
       if (!response.ok) {
         alert("Invalid palm print or username");
         console.log(ret!.data.message);
@@ -107,6 +106,7 @@ export default function CapturePalm({ navigation, route }: Props) {
       await SecureStore.setItemAsync("token", ret.data!.Token);
       await SecureStore.setItemAsync("loginDate", Date.now().toString());
       await SecureStore.setItemAsync("loggedIn", "YES");
+      setIsLoading(false);
       setAuthToken(ret.data!.Token);
       setLoggedIn(true);
     }
@@ -191,12 +191,29 @@ export default function CapturePalm({ navigation, route }: Props) {
           </TouchableOpacity>
         </View>
       )}
+      {isLoading && (
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator size="large" color="#0000ff" />
+        </View>
+      )}
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  loadingOverlay: {
+    bottom: 0,
+    height: "100%",
+    width: "100%",
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    position: "absolute",
+    backgroundColor: "rgba(0,0,0,0.6)",
+    zIndex: 9999,
+  },
   container: {
+    position: "relative",
     flex: 1,
     justifyContent: "space-between",
     ...Platform.select({
