@@ -11,6 +11,7 @@ import {
   SafeAreaView,
   ActivityIndicator,
   FlatList,
+  ImageBackground,
 } from "react-native";
 
 import * as SecureStore from "expo-secure-store";
@@ -22,7 +23,7 @@ import { LoginContext } from "../../contexts/LoginContext";
 import { RootScreens } from "../../navigation";
 import { RootStackParamList } from "../../types";
 
-const available = false;
+const available = true;
 
 export type PalmParams = {
   isLog: boolean;
@@ -60,7 +61,7 @@ export default function CapturePalm({ navigation, route }: Props) {
           },
           body: JSON.stringify({
             username: userName,
-            palmprint: photo.base64,
+            palmprint: "123456",
           }),
         }
       );
@@ -81,14 +82,14 @@ export default function CapturePalm({ navigation, route }: Props) {
 
   const onRegister = async () => {
     if (available && photoArr && !authToken) {
-      alert("Service not availble yet");
       const palmprints = photoArr.map((pic) => pic.base64);
       const body = {
         username: userName,
-        palmprints,
+        palmprint: "123456",
         firstname: data?.firstName,
         lastname: data?.lastName,
       };
+      console.log(body);
       const response = await fetch(
         "https://cisc4003.icac.tech/api/Auth/register",
         {
@@ -96,14 +97,12 @@ export default function CapturePalm({ navigation, route }: Props) {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
-
-            body: JSON.stringify(body),
           },
+          body: JSON.stringify(body),
         }
       );
       const ret = await response.json();
       if (!response.ok) {
-        alert("Invalid palm print or username");
         console.log(ret!.data.message);
         return;
       }
@@ -115,8 +114,6 @@ export default function CapturePalm({ navigation, route }: Props) {
       setAuthToken(ret.data!.Token);
       setLoggedIn(true);
     }
-    alert("Service Not Available");
-    navigation.navigate("Login");
   };
 
   useEffect(() => {
@@ -137,7 +134,7 @@ export default function CapturePalm({ navigation, route }: Props) {
       alert(`Photo ${photoArr!.length + 1} taken`);
       const newArr = [...photoArr!, compressed];
       setPhotoArr(newArr);
-      if (newArr.length === 9) {
+      if (newArr.length === 3) {
         setPreview(true);
       }
     } else {
@@ -317,8 +314,12 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   overlay: {
-    height: "100%",
     width: "100%",
+    height: "100%",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    resizeMode: "contain",
   },
   imageContainerStyle: {
     flex: 1,
