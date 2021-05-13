@@ -11,7 +11,6 @@ import {
   SafeAreaView,
   ActivityIndicator,
   FlatList,
-  ImageBackground,
 } from "react-native";
 
 import * as SecureStore from "expo-secure-store";
@@ -22,6 +21,7 @@ import { Text, View } from "../../components/Themed";
 import { LoginContext } from "../../contexts/LoginContext";
 import { RootScreens } from "../../navigation";
 import { RootStackParamList } from "../../types";
+import axios from "axios";
 
 const available = true;
 
@@ -85,33 +85,36 @@ export default function CapturePalm({ navigation, route }: Props) {
       const palmprints = photoArr.map((pic) => pic.base64);
       const body = {
         username: userName,
-        palmprint: "123456",
+        palmprints,
         firstname: data?.firstName,
         lastname: data?.lastName,
       };
       console.log(body);
-      const response = await fetch(
-        "https://cisc4003.icac.tech/api/Auth/register",
+      const response = await axios.post(
+        "https://cisc4003.icac.tech/api/Auth/register2",
         {
-          method: "POST",
+          ...body,
+        },
+        {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(body),
+          timeout: 0,
         }
       );
-      const ret = await response.json();
-      if (!response.ok) {
-        console.log(ret!.data.message);
+      const ret = response.data;
+      console.log(response);
+      if (!(response.status === 200)) {
+        console.log(response!.statusText);
         return;
       }
-      console.log(ret.data!.Token);
-      await SecureStore.setItemAsync("token", ret.data!.Token);
+      console.log(ret!.Token);
+      await SecureStore.setItemAsync("token", ret!.Token);
       await SecureStore.setItemAsync("loginDate", Date.now().toString());
       await SecureStore.setItemAsync("loggedIn", "YES");
       setIsLoading(false);
-      setAuthToken(ret.data!.Token);
+      setAuthToken(ret!.Token);
       setLoggedIn(true);
     }
   };
