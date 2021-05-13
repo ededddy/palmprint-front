@@ -1,4 +1,4 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { StyleSheet, Image, Platform } from "react-native";
 import { TouchableOpacity } from "react-native-gesture-handler";
 import { Ionicons } from "@expo/vector-icons";
@@ -9,10 +9,10 @@ import { LoginContext } from "../contexts/LoginContext";
 import { UserType } from "../types";
 
 export default function User({ navigation }: { navigation: any }) {
-  const { loggedIn, authToken, setAuthToken, setLoggedIn } = useContext(
-    LoginContext
-  );
+  const { loggedIn, authToken, setAuthToken, setLoggedIn } =
+    useContext(LoginContext);
   const [userInfo, setUserInfo] = useState<UserType | undefined>(undefined);
+  const controller = new AbortController();
   const fetchUser = async () => {
     const response = await fetch(
       "https://cisc4003.icac.tech/api/User/getSelfInfo",
@@ -21,6 +21,7 @@ export default function User({ navigation }: { navigation: any }) {
         headers: {
           Authorization: authToken,
         },
+        signal: controller.signal,
       }
     );
     if (!response.ok) {
@@ -28,10 +29,14 @@ export default function User({ navigation }: { navigation: any }) {
     }
     const ret = await response.json();
     setUserInfo(ret.data);
-    return;
+    return () => {
+      controller.abort();
+    };
   };
 
-  fetchUser();
+  useEffect(() => {
+    fetchUser();
+  }, [loggedIn]);
 
   const onLogout = async () => {
     if (authToken && loggedIn) {
