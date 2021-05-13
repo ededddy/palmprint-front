@@ -128,20 +128,20 @@ export default function CapturePalm({ navigation, route }: Props) {
 
   const snap = async () => {
     const pic = await camera.takePictureAsync({ base64: true });
+    const compressed = await ImageManipulator.manipulateAsync(pic.uri, [], {
+      compress: 0.7,
+      base64: true,
+      format: ImageManipulator.SaveFormat.JPEG,
+    });
     if (!isLog) {
       alert(`Photo ${photoArr!.length + 1} taken`);
-      const compressed = await ImageManipulator.manipulateAsync(pic.uri, [], {
-        compress: 0.7,
-        base64: true,
-        format: ImageManipulator.SaveFormat.JPEG,
-      });
       const newArr = [...photoArr!, compressed];
       setPhotoArr(newArr);
       if (newArr.length === 9) {
         setPreview(true);
       }
     } else {
-      setPhoto(pic);
+      setPhoto(compressed);
       setPreview(true);
     }
   };
