@@ -10,15 +10,19 @@ import {
   Image,
   SafeAreaView,
   ActivityIndicator,
+  FlatList,
 } from "react-native";
 
 import * as SecureStore from "expo-secure-store";
+import * as ImageManipulator from "expo-image-manipulator";
 
 import { Text, View } from "../../components/Themed";
 
 import { LoginContext } from "../../contexts/LoginContext";
 import { RootScreens } from "../../navigation";
 import { RootStackParamList } from "../../types";
+
+const available = false;
 
 export type PalmParams = {
   isLog: boolean;
@@ -34,14 +38,14 @@ interface Props {
 }
 
 export default function CapturePalm({ navigation, route }: Props) {
-  const { authToken, setAuthToken, userName, setLoggedIn } = useContext(
-    LoginContext
-  );
+  const { authToken, setAuthToken, userName, setLoggedIn } =
+    useContext(LoginContext);
   const [isLoading, setIsLoading] = useState(false);
   const { isLog, data } = route.params;
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [type, setType] = useState(Camera.Constants.Type.back);
   const [preview, setPreview] = useState<boolean>(false);
+  const [photoArr, setPhotoArr] = useState<CameraCapturedPicture[]>([]);
   let camera: Camera;
   const [photo, setPhoto] = useState<any>();
   const onLogin = async () => {
@@ -66,7 +70,6 @@ export default function CapturePalm({ navigation, route }: Props) {
         return;
       }
       const ret = await response.json();
-      console.log(ret.data!.Token);
       await SecureStore.setItemAsync("token", ret.data!.Token);
       await SecureStore.setItemAsync("loginDate", Date.now().toString());
       await SecureStore.setItemAsync("loggedIn", "YES");
@@ -77,8 +80,15 @@ export default function CapturePalm({ navigation, route }: Props) {
   };
 
   const onRegister = async () => {
-    if (photo && !authToken) {
-      setIsLoading(true);
+    if (available && photoArr && !authToken) {
+      alert("Service not availble yet");
+      const palmprints = photoArr.map((pic) => pic.base64);
+      const body = {
+        username: userName,
+        palmprints,
+        firstname: data?.firstName,
+        lastname: data?.lastName,
+      };
       const response = await fetch(
         "https://cisc4003.icac.tech/api/Auth/register",
         {
@@ -87,12 +97,7 @@ export default function CapturePalm({ navigation, route }: Props) {
             Accept: "application/json",
             "Content-Type": "application/json",
 
-            body: JSON.stringify({
-              username: userName,
-              palmprint: photo.base64,
-              firstname: data?.firstName,
-              lastname: data?.lastName,
-            }),
+            body: JSON.stringify(body),
           },
         }
       );
@@ -110,6 +115,8 @@ export default function CapturePalm({ navigation, route }: Props) {
       setAuthToken(ret.data!.Token);
       setLoggedIn(true);
     }
+    alert("Service Not Available");
+    navigation.navigate("Login");
   };
 
   useEffect(() => {
@@ -120,8 +127,23 @@ export default function CapturePalm({ navigation, route }: Props) {
   }, []);
 
   const snap = async () => {
-    setPhoto(await camera.takePictureAsync());
-    setPreview(true);
+    const pic = await camera.takePictureAsync({ base64: true });
+    if (!isLog) {
+      alert(`Photo ${photoArr!.length + 1} taken`);
+      const compressed = await ImageManipulator.manipulateAsync(pic.uri, [], {
+        compress: 0.7,
+        base64: true,
+        format: ImageManipulator.SaveFormat.JPEG,
+      });
+      const newArr = [...photoArr!, compressed];
+      setPhotoArr(newArr);
+      if (newArr.length === 9) {
+        setPreview(true);
+      }
+    } else {
+      setPhoto(pic);
+      setPreview(true);
+    }
   };
 
   return (
@@ -175,6 +197,34 @@ export default function CapturePalm({ navigation, route }: Props) {
           </Camera>
           <TouchableOpacity style={styles.blueButton} onPress={snap}>
             <Text style={styles.text}>SNAP</Text>
+          </TouchableOpacity>
+        </>
+      ) : preview && !isLog ? (
+        <>
+          <FlatList
+            data={photoArr}
+            renderItem={({ item }) => (
+              <View style={styles.imageContainerStyle}>
+                <Image
+                  style={styles.imageStyle}
+                  source={{
+                    uri: item.uri,
+                  }}
+                />
+              </View>
+            )}
+            //Setting the number of column
+            numColumns={3}
+            keyExtractor={(_, index) => index.toString()}
+          />
+          <TouchableOpacity
+            style={styles.blueButton}
+            onPress={() => {
+              if (isLog) onLogin();
+              else onRegister();
+            }}
+          >
+            <Text style={styles.text}>NEXT</Text>
           </TouchableOpacity>
         </>
       ) : (
@@ -268,6 +318,15 @@ const styles = StyleSheet.create({
   },
   overlay: {
     height: "100%",
+    width: "100%",
+  },
+  imageContainerStyle: {
+    flex: 1,
+    flexDirection: "column",
+    margin: 1,
+  },
+  imageStyle: {
+    height: 120,
     width: "100%",
   },
 });
