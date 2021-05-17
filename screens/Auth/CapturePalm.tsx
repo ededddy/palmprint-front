@@ -49,28 +49,34 @@ export default function CapturePalm({ navigation, route }: Props) {
   const [photoArr, setPhotoArr] = useState<CameraCapturedPicture[]>([]);
   let camera: Camera;
   const [photo, setPhoto] = useState<any>();
+
   const onLogin = async () => {
     if (photo && !authToken) {
+      const body = {
+        username: userName,
+        palmprint: photo.base64,
+      };
+      console.log(body);
+      setIsLoading(true);
       const response = await fetch(
-        "https://cisc4003.icac.tech/api/Auth/login",
+        "https://cisc4003.icac.tech/api/Auth/login2",
         {
           method: "POST",
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            username: userName,
-            palmprint: "123456",
-          }),
+          body: JSON.stringify(body),
         }
       );
-      setIsLoading(false);
+      const ret = await response.json();
       if (!response.ok) {
-        alert("Invalid palm print or username");
+        console.log(ret);
+        alert(ret.data!.message);
+        setIsLoading(false);
         return;
       }
-      const ret = await response.json();
+      console.log(ret);
       await SecureStore.setItemAsync("token", ret.data!.Token);
       await SecureStore.setItemAsync("loginDate", Date.now().toString());
       await SecureStore.setItemAsync("loggedIn", "YES");
@@ -85,32 +91,34 @@ export default function CapturePalm({ navigation, route }: Props) {
       const palmprints = photoArr.map((pic) => pic.base64);
       const body = {
         username: userName,
-        palmprints,
         firstname: data?.firstName,
         lastname: data?.lastName,
+        palmprints,
       };
       console.log(body);
+      setIsLoading(true);
       const response = await axios.post(
         "https://cisc4003.icac.tech/api/Auth/register2",
-        {
-          ...body,
-        },
+        body,
         {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
           },
           timeout: 0,
+          maxContentLength: Number.POSITIVE_INFINITY,
+          maxBodyLength: Number.POSITIVE_INFINITY,
         }
       );
       const ret = response.data;
-      console.log(response);
+      console.log(ret);
       if (!(response.status === 200)) {
-        console.log(response!.statusText);
+        alert(ret!.data.message);
+        setIsLoading(false);
         return;
       }
-      console.log(ret!.Token);
-      await SecureStore.setItemAsync("token", ret!.Token);
+      console.log(ret!.data.Token);
+      await SecureStore.setItemAsync("token", ret!.data.Token);
       await SecureStore.setItemAsync("loginDate", Date.now().toString());
       await SecureStore.setItemAsync("loggedIn", "YES");
       setIsLoading(false);
@@ -137,7 +145,7 @@ export default function CapturePalm({ navigation, route }: Props) {
       alert(`Photo ${photoArr!.length + 1} taken`);
       const newArr = [...photoArr!, compressed];
       setPhotoArr(newArr);
-      if (newArr.length === 3) {
+      if (newArr.length === 6) {
         setPreview(true);
       }
     } else {
@@ -217,26 +225,14 @@ export default function CapturePalm({ navigation, route }: Props) {
             numColumns={3}
             keyExtractor={(_, index) => index.toString()}
           />
-          <TouchableOpacity
-            style={styles.blueButton}
-            onPress={() => {
-              if (isLog) onLogin();
-              else onRegister();
-            }}
-          >
+          <TouchableOpacity style={styles.blueButton} onPress={onRegister}>
             <Text style={styles.text}>NEXT</Text>
           </TouchableOpacity>
         </>
       ) : (
         <View style={styles.camera}>
           <Image source={{ uri: photo!.uri }} style={{ flex: 1 }} />
-          <TouchableOpacity
-            style={styles.blueButton}
-            onPress={() => {
-              if (isLog) onLogin();
-              else onRegister();
-            }}
-          >
+          <TouchableOpacity style={styles.blueButton} onPress={onLogin}>
             <Text style={styles.text}>NEXT</Text>
           </TouchableOpacity>
         </View>

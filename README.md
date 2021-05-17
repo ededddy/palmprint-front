@@ -11,6 +11,10 @@
 1.
 
 ```
+npm install -g expo-cli
+```
+
+```
 cd palmprint-front
 ```
 
